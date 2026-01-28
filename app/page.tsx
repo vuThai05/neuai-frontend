@@ -9,7 +9,7 @@ import { UserMenu } from "@/components/user-menu"
 import { ChatInput } from "@/components/chat-input"
 import { ChatConversation } from "@/components/chat-conversation"
 import { SettingsModal } from "@/components/settings-modal"
-import { PegasusLogo } from "@/components/pegasus-logo"
+import { AskneuLogo } from "@/components/askneu-logo"
 
 export default function HomePage() {
   const {
@@ -38,7 +38,7 @@ export default function HomePage() {
       if (!chatId) return
 
       // Add user message
-      addMessage(chatId, {  id: nanoid(), role: "user", content: message, timestamp: new Date() })
+      addMessage(chatId, { id: nanoid(), role: "user", content: message, timestamp: new Date() })
 
       // Create pending assistant message for loading state
       const assistantMessageId = nanoid()
@@ -69,7 +69,7 @@ export default function HomePage() {
         isLoading: false,
       })
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "Không thể nhận phản hồi từ PegaSus"
+      const errorMessage = error instanceof Error ? error.message : "Không thể nhận phản hồi từ AskNeu"
       setError(errorMessage)
 
       // Mark the last assistant message as errored
@@ -170,7 +170,7 @@ export default function HomePage() {
             <div className="border-t bg-background p-4 space-y-2">
               <ChatInput onSend={handleSend} className="max-w-3xl mx-auto" isLoading={isLoading} />
               <p className="text-xs text-muted-foreground text-center max-w-3xl mx-auto">
-                PegaSus có thể mắc lỗi, hãy kiểm tra kỹ các thông tin quan trọng.
+                AskNeu có thể mắc lỗi, hãy kiểm tra kỹ các thông tin quan trọng.
               </p>
             </div>
           </div>
@@ -180,9 +180,9 @@ export default function HomePage() {
             <div className="max-w-2xl w-full space-y-8 text-center">
               {/* Welcome Message */}
               <div className="flex items-center justify-center gap-3">
-                <PegasusLogo size={40} />
+                <AskneuLogo size={40} />
                 <h1 className="text-3xl font-semibold">
-                  Bắt đầu với <span className="text-primary">PegaSus</span>
+                  Bắt đầu với <span className="text-primary">AskNeu</span>
                 </h1>
               </div>
 

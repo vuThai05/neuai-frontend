@@ -4,7 +4,7 @@ import { usePathname } from "next/navigation"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
 import { useAppStore } from "@/lib/store"
-import { PegasusLogo } from "./pegasus-logo"
+import { AskneuLogo } from "./askneu-logo"
 import { Button } from "@/components/ui/button"
 import { Search, FolderOpen, Plus, Settings, Menu, MoreHorizontal, Pencil, Trash2, Share2, Archive } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
@@ -57,14 +57,12 @@ export function Sidebar() {
     >
       <div className="flex items-center justify-between p-4 h-16 shrink-0">
         {sidebarCollapsed ? (
-          // Collapsed: Logo at top-left, entire sidebar clickable to expand
-          <PegasusLogo size={28} className="mx-auto" />
+          <AskneuLogo size={28} className="mx-auto" />
         ) : (
-          // Expanded: Logo at top-left, hamburger at top-right
           <>
             <Link href="/" className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-              <PegasusLogo size={28} />
-              <span className="font-semibold text-primary">PegaSus</span>
+              <AskneuLogo size={28} />
+              <span className="font-semibold text-primary">AskNeu</span>
             </Link>
             <Button
               variant="ghost"

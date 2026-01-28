@@ -1,6 +1,6 @@
 "use client"
 
-import { PegasusLogo } from "../pegasus-logo"
+import { AskneuLogo } from "../askneu-logo"
 import { GraduationCap, BookOpen, FileQuestion, Upload } from "lucide-react"
 
 const features = [
@@ -15,17 +15,17 @@ export function AboutSettings() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center gap-4">
-        <PegasusLogo size={48} />
+        <AskneuLogo size={48} />
         <div>
-          <h3 className="font-semibold text-lg">PegaSus</h3>
+          <h3 className="font-semibold text-lg">AskNeu</h3>
           <p className="text-sm text-muted-foreground">Version 1.0.0</p>
         </div>
       </div>
 
       {/* Description */}
       <p className="text-sm text-muted-foreground leading-relaxed">
-        PegaSus là trợ lý học tập được hỗ trợ bởi AI, được thiết kế dành riêng cho sinh viên. 
-        PegaSus giúp bạn hiểu các khái niệm phức tạp, tiến hành nghiên cứu hiệu quả và chuẩn bị cho kỳ thi.
+        AskNeu là trợ lý học tập được hỗ trợ bởi AI, được thiết kế dành riêng cho sinh viên.
+        AskNeu giúp bạn hiểu các khái niệm phức tạp, tiến hành nghiên cứu hiệu quả và chuẩn bị cho kỳ thi.
       </p>
 
       {/* Features */}

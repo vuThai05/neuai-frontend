@@ -16,7 +16,7 @@ interface ChatInputProps {
   disabled?: boolean
 }
 
-export function ChatInput({ onSend, placeholder = "Hỏi PegaSus bất cứ điều gì...", className, isLoading = false, disabled = false }: ChatInputProps) {
+export function ChatInput({ onSend, placeholder = "Hỏi AskNeu bất cứ điều gì...", className, isLoading = false, disabled = false }: ChatInputProps) {
   const [message, setMessage] = useState("")
 
   const handleSubmit = (e: React.FormEvent) => {

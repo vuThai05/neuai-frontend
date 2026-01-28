@@ -9,7 +9,7 @@ const _geist = Geist({ subsets: ["latin"] })
 const _geistMono = Geist_Mono({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "PegaSus - Trợ lý học tập AI",
+  title: "AskNeu - Trợ lý học tập AI",
   description: "Trợ lý học tập thông minh hỗ trợ bởi AI dành cho sinh viên",
   icons: {
     icon: '/favicon.ico',

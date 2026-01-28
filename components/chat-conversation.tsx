@@ -6,7 +6,7 @@ import type { Message } from "@/lib/store"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner"
-import { PegasusLogo } from "./pegasus-logo"
+import { AskneuLogo } from "./askneu-logo"
 import { AlertCircle, RotateCcw } from "lucide-react"
 
 interface ChatConversationProps {
@@ -31,7 +31,7 @@ export function ChatConversation({ messages, onRetry }: ChatConversationProps) {
           {message.role === "assistant" && (
             <div className="shrink-0">
               <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center">
-                <PegasusLogo size={20} />
+                <AskneuLogo size={20} />
               </div>
             </div>
           )}
