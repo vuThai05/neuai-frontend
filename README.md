@@ -16,6 +16,7 @@ npm run dev
 ```
 # MongoDB Connection String
 MONGODB_URI=YOUR_MONGODB_URI
+MONGODB_DB=YOUR_MONGODB_DB
 
 # Google Gemini API Key
 GEMINI_API_KEY=YOUR_GEMINI_API_KEY
