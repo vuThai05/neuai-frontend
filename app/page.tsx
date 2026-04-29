@@ -1,5 +1,4 @@
 "use client"
-import { Button } from "@/components/ui/button"
 import { chat } from "@/lib/api-client"
 import { nanoid } from "nanoid"
 
@@ -19,7 +18,7 @@ export default function HomePage() {
     addMessage,
     updateMessage,
     createNewChat,
-    setCurrentChatId,
+    setConversationId,
     setLoading,
     setError,
   } = useAppStore()
@@ -31,30 +30,34 @@ export default function HomePage() {
       setLoading(true)
       setError(null)
 
-      if (!currentChatId) {
-        createNewChat()
+      let chatId = currentChatId
+      if (!chatId) {
+        chatId = createNewChat()
       }
-      const chatId = currentChatId || chats[0]?.id
-      if (!chatId) return
 
-      // Add user message
-      addMessage(chatId, { id: nanoid(), role: "user", content: message, timestamp: new Date() })
+      // Read fresh state because `chats` from closure may not include a chat
+      // we just created in the same tick.
+      const fresh = useAppStore.getState()
+      const targetChat = fresh.chats.find((c) => c.id === chatId)
+      const conversationId = targetChat?.conversationId ?? null
 
-      // Create pending assistant message for loading state
+      addMessage(chatId, {
+        id: nanoid(),
+        role: "user",
+        content: message,
+        timestamp: new Date(),
+      })
+
       const assistantMessageId = nanoid()
-      addMessage(
-        chatId,
-        {
-          id: assistantMessageId,
-          role: "assistant",
-          content: "",
-          timestamp: new Date(),
-          isLoading: true,
-        },
-      )
+      addMessage(chatId, {
+        id: assistantMessageId,
+        role: "assistant",
+        content: "",
+        timestamp: new Date(),
+        isLoading: true,
+      })
 
-      // Make API call
-      const response = await chat(message)
+      const response = await chat(message, conversationId)
       if (
         response.answer.startsWith("Loi") ||
         response.answer.includes("Khong nhan duoc")
@@ -62,21 +65,25 @@ export default function HomePage() {
         throw new Error(response.answer)
       }
 
-      // Update assistant message with response
+      if (!targetChat?.conversationId && response.conversation_id) {
+        setConversationId(chatId, response.conversation_id)
+      }
+
       updateMessage(chatId, assistantMessageId, {
         content: response.answer,
         sources: response.sources,
+        decision: response.decision,
         isLoading: false,
       })
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "Không thể nhận phản hồi từ AskNeu"
       setError(errorMessage)
 
-      // Mark the last assistant message as errored
-      const chatId = currentChatId || chats[0]?.id
+      const fresh = useAppStore.getState()
+      const chatId = currentChatId || fresh.currentChatId
       if (chatId) {
-        const chat = chats.find((c) => c.id === chatId)
-        const lastAssistantMessage = [...(chat?.messages || [])]
+        const foundChat = fresh.chats.find((c) => c.id === chatId)
+        const lastAssistantMessage = [...(foundChat?.messages || [])]
           .reverse()
           .find((m) => m.role === "assistant")
         if (lastAssistantMessage) {
@@ -95,14 +102,13 @@ export default function HomePage() {
     const chatId = currentChatId
     if (!chatId) return
 
-    const foundChat = chats.find((c) => c.id === chatId)
+    const fresh = useAppStore.getState()
+    const foundChat = fresh.chats.find((c) => c.id === chatId)
     if (!foundChat) return
 
-    // Find the errored assistant message
     const erroredMessage = foundChat.messages.find((m) => m.id === messageId)
     if (!erroredMessage || erroredMessage.role !== "assistant" || !erroredMessage.error) return
 
-    // Find the preceding user message
     const messageIndex = foundChat.messages.indexOf(erroredMessage)
     const userMessage = foundChat.messages
       .slice(0, messageIndex)
@@ -111,14 +117,12 @@ export default function HomePage() {
 
     if (!userMessage) return
 
-    // Check retry count
     const retryCount = (erroredMessage.retryCount || 0) + 1
     if (retryCount > 3) {
       setError("Maximum retry attempts reached. Please try again later.")
       return
     }
 
-    // Update the errored message to show loading state
     updateMessage(chatId, messageId, {
       error: undefined,
       isLoading: true,
@@ -129,12 +133,16 @@ export default function HomePage() {
       setLoading(true)
       setError(null)
 
-      // Make API call
-      const response = await chat(userMessage.content)
+      const response = await chat(userMessage.content, foundChat.conversationId ?? null)
+
+      if (!foundChat.conversationId && response.conversation_id) {
+        setConversationId(chatId, response.conversation_id)
+      }
 
       updateMessage(chatId, messageId, {
         content: response.answer,
         sources: response.sources,
+        decision: response.decision,
         isLoading: false,
       })
     } catch (error) {

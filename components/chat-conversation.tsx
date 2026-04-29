@@ -2,12 +2,13 @@
 
 import { useEffect, useRef } from "react"
 import { cn } from "@/lib/utils"
-import type { Message } from "@/lib/store"
+import type { Decision, Message } from "@/lib/store"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner"
 import { AskneuLogo } from "./askneu-logo"
-import { AlertCircle, RotateCcw } from "lucide-react"
+import { AlertCircle, Globe, RotateCcw, ShieldCheck } from "lucide-react"
 
 interface ChatConversationProps {
   messages: Message[]
@@ -24,6 +25,7 @@ export function ChatConversation({ messages, onRetry }: ChatConversationProps) {
   useEffect(() => {
     scrollToBottom()
   }, [messages])
+
   return (
     <div className="p-6 space-y-6">
       {messages.map((message) => (
@@ -72,16 +74,26 @@ export function ChatConversation({ messages, onRetry }: ChatConversationProps) {
               <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.content || ""}</p>
             )}
 
+            {message.role === "assistant" && message.decision && !message.isLoading && !message.error && (
+              <DecisionBlock decision={message.decision} />
+            )}
+
             {message.sources && message.sources.length > 0 && (
               <div className="mt-4 pt-4 border-t border-primary-foreground/20">
                 <p className="text-xs font-semibold mb-2 opacity-70">Nguồn tham khảo</p>
                 <div className="space-y-2">
                   {message.sources.map((source, idx) => (
                     <div key={idx} className="text-xs bg-background/50 p-2 rounded border border-border/50">
-                      <p className="opacity-90 line-clamp-2 italic">"{source.text}"</p>
-                      {source.link && (
+                      <div className="flex items-center justify-between gap-2 mb-1">
+                        <p className="font-medium truncate">{source.title || "Internal source"}</p>
+                        <span className="text-[10px] uppercase tracking-wide opacity-60">
+                          {source.type}
+                        </span>
+                      </div>
+                      <p className="opacity-90 line-clamp-2 italic">"{source.snippet}"</p>
+                      {source.url && (
                         <a
-                          href={source.link}
+                          href={source.url}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-primary hover:underline mt-1 block"
@@ -103,6 +115,33 @@ export function ChatConversation({ messages, onRetry }: ChatConversationProps) {
         </div>
       ))}
       <div ref={messagesEndRef} />
+    </div>
+  )
+}
+
+function DecisionBlock({ decision }: { decision: Decision }) {
+  const isInternal = decision.route === "RAG_ONLY"
+  const Icon = isInternal ? ShieldCheck : Globe
+  const label = isInternal ? "Nội bộ" : "Cần web (P0 chưa kích hoạt)"
+  const variant = isInternal ? "secondary" : "outline"
+
+  return (
+    <div className="mt-3 space-y-1">
+      <div className="flex items-center gap-2">
+        <Badge variant={variant} className="gap-1">
+          <Icon className="h-3 w-3" />
+          {label}
+        </Badge>
+        <span className="text-[10px] opacity-60">
+          confidence {(decision.confidence * 100).toFixed(0)}%
+        </span>
+      </div>
+      <p className="text-[11px] opacity-70 leading-snug">{decision.reason}</p>
+      {!isInternal && (
+        <p className="text-[11px] opacity-80 leading-snug">
+          Hệ thống đề xuất tra cứu thêm nguồn web cho câu hỏi này. Tính năng tìm kiếm web sẽ được kích hoạt ở giai đoạn tiếp theo.
+        </p>
+      )}
     </div>
   )
 }
