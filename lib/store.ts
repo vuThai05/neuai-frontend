@@ -1,7 +1,14 @@
 import { create } from "zustand"
 import { nanoid } from "nanoid"
 
-import type { Decision, Source } from "@/lib/api-client"
+import {
+  getConversation,
+  listConversations,
+  type BackendMessage,
+  type ConversationSummary,
+  type Decision,
+  type Source,
+} from "@/lib/api-client"
 
 export type { Decision, Source } from "@/lib/api-client"
 
@@ -22,6 +29,7 @@ export interface Chat {
   conversationId?: string
   title: string
   messages: Message[]
+  messagesLoaded?: boolean
   createdAt: Date
   updatedAt: Date
   archived?: boolean
@@ -35,6 +43,7 @@ interface AppState {
   settingsTab: string
   isLoading: boolean
   lastError: string | null
+  conversationsLoaded: boolean
 
   setCurrentChatId: (id: string | null) => void
   setSidebarCollapsed: (collapsed: boolean) => void
@@ -50,9 +59,50 @@ interface AppState {
   renameChat: (id: string, title: string) => void
   archiveChat: (id: string) => void
   deleteAllChats: () => void
+  loadConversations: () => Promise<void>
+  loadConversationDetail: (chatId: string) => Promise<void>
 }
 
-export const useAppStore = create<AppState>((set) => ({
+function summaryToChat(summary: ConversationSummary): Chat {
+  return {
+    id: summary.id,
+    conversationId: summary.id,
+    title: summary.title || "Cuộc trò chuyện",
+    messages: [],
+    messagesLoaded: summary.message_count === 0,
+    createdAt: new Date(summary.created_at),
+    updatedAt: new Date(summary.updated_at),
+  }
+}
+
+function backendMessageToMessage(msg: BackendMessage): Message {
+  const result: Message = {
+    id: msg.id,
+    role: msg.type,
+    content: msg.content,
+    timestamp: new Date(msg.timestamp),
+  }
+  if (msg.refs && msg.refs.length > 0) {
+    result.sources = msg.refs.map((ref) => ({
+      type: (ref.type as Source["type"]) || "internal",
+      title: ref.title || "",
+      url: ref.url ?? null,
+      snippet: ref.snippet || "",
+      score: ref.score ?? 0,
+    }))
+  }
+  if (msg.decision) {
+    result.decision = {
+      route: msg.decision.route as Decision["route"],
+      reason_code: msg.decision.reason_code as Decision["reason_code"],
+      reason: msg.decision.reason,
+      confidence: msg.decision.confidence,
+    }
+  }
+  return result
+}
+
+export const useAppStore = create<AppState>((set, get) => ({
   chats: [],
   currentChatId: null,
   sidebarCollapsed: false,
@@ -60,6 +110,7 @@ export const useAppStore = create<AppState>((set) => ({
   settingsTab: "general",
   isLoading: false,
   lastError: null,
+  conversationsLoaded: false,
 
   setCurrentChatId: (id) => set({ currentChatId: id }),
   setSidebarCollapsed: (collapsed) => set({ sidebarCollapsed: collapsed }),
@@ -73,6 +124,7 @@ export const useAppStore = create<AppState>((set) => ({
       id: nanoid(),
       title: "Cuộc trò chuyện mới",
       messages: [],
+      messagesLoaded: true,
       createdAt: new Date(),
       updatedAt: new Date(),
     }
@@ -102,6 +154,7 @@ export const useAppStore = create<AppState>((set) => ({
           ? {
               ...chat,
               messages: [...chat.messages, newMessage],
+              messagesLoaded: true,
               updatedAt: new Date(),
               title:
                 chat.messages.length === 0 && message.role === "user"
@@ -146,4 +199,63 @@ export const useAppStore = create<AppState>((set) => ({
     })),
 
   deleteAllChats: () => set({ chats: [], currentChatId: null }),
+
+  loadConversations: async () => {
+    try {
+      const summaries = await listConversations()
+      const fetched = summaries.map(summaryToChat)
+      set((state) => {
+        // Preserve any locally-created chats that haven't been persisted yet
+        // (e.g. brand-new chat the user is currently typing into).
+        const localOnly = state.chats.filter(
+          (chat) => !chat.conversationId && chat.messages.length > 0,
+        )
+        const fetchedIds = new Set(fetched.map((c) => c.id))
+        const merged = [
+          ...localOnly,
+          ...fetched.filter((c) => !state.chats.some((existing) => existing.id === c.id && existing.messages.length > 0)),
+        ]
+        // Keep ordering by updatedAt desc.
+        merged.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())
+        return {
+          chats: merged.length > 0 ? merged : fetched,
+          conversationsLoaded: true,
+        }
+      })
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Không thể tải danh sách hội thoại"
+      set({ lastError: errorMessage, conversationsLoaded: true })
+    }
+  },
+
+  loadConversationDetail: async (chatId) => {
+    const state = get()
+    const chat = state.chats.find((c) => c.id === chatId)
+    if (!chat || !chat.conversationId || chat.messagesLoaded) {
+      return
+    }
+    try {
+      const detail = await getConversation(chat.conversationId)
+      const messages = detail.messages.map(backendMessageToMessage)
+      set((current) => ({
+        chats: current.chats.map((c) =>
+          c.id === chatId
+            ? {
+                ...c,
+                title: detail.title || c.title,
+                messages,
+                messagesLoaded: true,
+                createdAt: new Date(detail.created_at),
+                updatedAt: new Date(detail.updated_at),
+              }
+            : c,
+        ),
+      }))
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Không thể tải nội dung hội thoại"
+      set({ lastError: errorMessage })
+    }
+  },
 }))

@@ -27,6 +27,7 @@ export function Sidebar() {
     renameChat,
     archiveChat,
     setSettingsOpen,
+    loadConversationDetail,
   } = useAppStore()
   const [hoveredChat, setHoveredChat] = useState<string | null>(null)
   const [editingChat, setEditingChat] = useState<string | null>(null)
@@ -161,6 +162,9 @@ export function Sidebar() {
                         onClick={(e) => {
                           e.stopPropagation()
                           setCurrentChatId(chat.id)
+                          if (chat.conversationId && !chat.messagesLoaded) {
+                            void loadConversationDetail(chat.id)
+                          }
                         }}
                         className="flex-1 px-3 py-2 text-sm truncate"
                       >

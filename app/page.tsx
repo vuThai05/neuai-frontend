@@ -1,4 +1,6 @@
 "use client"
+import { useEffect } from "react"
+
 import { chat } from "@/lib/api-client"
 import { nanoid } from "nanoid"
 
@@ -21,9 +23,26 @@ export default function HomePage() {
     setConversationId,
     setLoading,
     setError,
+    loadConversations,
+    loadConversationDetail,
+    conversationsLoaded,
   } = useAppStore()
 
   const currentChat = chats.find((c) => c.id === currentChatId)
+
+  useEffect(() => {
+    if (!conversationsLoaded) {
+      void loadConversations()
+    }
+  }, [conversationsLoaded, loadConversations])
+
+  useEffect(() => {
+    if (!currentChatId) return
+    const chat = useAppStore.getState().chats.find((c) => c.id === currentChatId)
+    if (chat?.conversationId && !chat.messagesLoaded) {
+      void loadConversationDetail(currentChatId)
+    }
+  }, [currentChatId, loadConversationDetail])
 
   const handleSend = async (message: string) => {
     try {
